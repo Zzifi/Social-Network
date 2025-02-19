@@ -1,0 +1,88 @@
+specification {
+    element person {
+        style {
+            shape person
+            color green
+        }
+    }
+    element softwareSystem
+    element container
+    element component
+}
+
+model {
+  user = person "Пользователь" "Пользователь социальной сети"
+
+  socialNetwork = softwareSystem "Social Network" {
+    apiGateway = container "API Gateway" {
+      description "Маршрутизация запросов и взаимодействие с микросервисами"
+      technology "Go"
+    }
+
+    userService = container "User Service" {
+      description "Регистрация, аутентификация и управление пользователями"
+      technology "Go, PostgreSQL"
+    }
+
+    postService = container "Post & Comment Service" {
+      description "Создание, управление постами и комментариями"
+      technology "Go, Cassandra"
+    }
+
+    statisticsService = container "Statistics Service" {
+      description "Подсчет лайков, просмотров и комментариев"
+      technology "Go, ClickHouse"
+    }
+
+    messageBroker = container "Message Broker" {
+      description "Передача событий между сервисами"
+      technology "???"
+      style {
+        shape queue
+      }
+    }
+
+    postgresDb = container "PostgreSQL" {
+      description "Хранение данных пользователей"
+      technology "Database"
+      style {
+        shape cylinder
+      }
+    }
+
+    cassandraDb = container "Cassandra" {
+      description "Хранение данных постов и комментариев"
+      technology "Database"
+      style {
+        shape cylinder
+      }
+    }
+
+    clickhouseDb = container "ClickHouse" {
+      description "Хранение и анализ статистики"
+      technology "Database"
+      style {
+        shape cylinder
+      }
+    }
+
+    user -> socialNetwork.apiGateway "Использует" "HTTPS"
+
+    socialNetwork.apiGateway -> socialNetwork.userService "Маршрутизирует" "REST API"
+    socialNetwork.apiGateway -> socialNetwork.postService "Маршрутизирует" "REST API"
+    socialNetwork.apiGateway -> socialNetwork.statisticsService "Запрашивает статистику" "REST API"
+
+    socialNetwork.userService -> socialNetwork.postgresDb "Читает/пишет" "SQL"
+    socialNetwork.postService -> socialNetwork.cassandraDb "Читает/пишет" "SQL"
+    socialNetwork.statisticsService -> socialNetwork.clickhouseDb "Читает/пишет" "SQL"
+
+    socialNetwork.postService -> socialNetwork.messageBroker "Публикует события" "???"
+    socialNetwork.statisticsService -> socialNetwork.messageBroker "Читает события" "???"
+  }
+}
+
+views {
+    view index {
+        include *
+    }
+}
