@@ -1,0 +1,4 @@
+http_server:
+  address: "http://user_service:8081"
+  timeout: 4s
+  idle_timeout: 60s

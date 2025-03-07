@@ -1,0 +1,49 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: zzifi
+      POSTGRES_PASSWORD: qwerty
+      POSTGRES_DB: user_service_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./user-service/internal/storage/postgre/init.sql:/docker-entrypoint-initdb.d/init.sql
+    #   - postgres_data:/var/lib/postgresql/data
+
+  user_service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    container_name: user-service
+    depends_on:
+      - postgres
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: zzifi
+      DB_PASSWORD: qwerty
+      DB_NAME: user_service_db
+    ports:
+      - "8081:8081"
+    restart: always
+
+  api_gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    depends_on:
+      - user_service
+    environment:
+      USER_SERVICE_URL: http://user_service:8081
+    ports:
+      - "8080:8080"
+    restart: always
+
+volumes:
+  postgres_data:
