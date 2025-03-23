@@ -1,0 +1,4 @@
+http_server:
+  address: "http://api_gateway:8080"
+  timeout: 4s
+  idle_timeout: 60s
