@@ -10,10 +10,20 @@ services:
       POSTGRES_PASSWORD: qwerty
       POSTGRES_DB: user_service_db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - ./user-service/internal/storage/postgre/init.sql:/docker-entrypoint-initdb.d/init.sql
     #   - postgres_data:/var/lib/postgresql/data
+
+  cassandra:
+    image: cassandra:4.1
+    container_name: cassandra_db
+    restart: always
+    environment:
+      MAX_HEAP_SIZE: "512M"
+      HEAP_NEWSIZE: "100M"
+    ports:
+      - "9042:9042"
 
   user_service:
     build:
@@ -32,6 +42,20 @@ services:
       - "8081:8081"
     restart: always
 
+  post_service:
+    build:
+      context: ./post-service
+      dockerfile: Dockerfile
+    container_name: post-service
+    environment:
+      CASSANDRA_HOST: cassandra
+      CASSANDRA_PORT: 9042
+    depends_on:
+      - cassandra
+    ports:
+      - "50051:50051"
+    restart: always
+
   api_gateway:
     build:
       context: ./api-gateway
@@ -39,6 +63,7 @@ services:
     container_name: api-gateway
     depends_on:
       - user_service
+      - post_service_api
     environment:
       USER_SERVICE_URL: http://user_service:8081
     ports:

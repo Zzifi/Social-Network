@@ -21,6 +21,7 @@ import (
 
 var routes = map[string]string{
 	"/user_service": os.Getenv("USER_SERVICE_URL"),
+	"/post_service": os.Getenv("POST_SERVICE_URL"),
 }
 
 var logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
@@ -30,13 +31,19 @@ func main() {
 
 	router := chi.NewRouter()
 
+	conn, err := grpc.Dial(routes["/post_service"], grpc.WithInsecure())
+	if err != nil:
+		logger.Error("could not ", err)
+	defer conn.Close()
+	postClient = postv1.NewPostServiceClient(conn)
+
 	router.Use(middleware.RequestID)
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
 	router.Use(mwJwtAuth.JwtAuthMiddleware)
 
 	for prefix, target := range routes {
-		router.Handle(prefix+"/*", httpHandlers.ReverseProxy(logger, target))
+		router.Handle(prefix+"/*", httpHandlers.ReverseProxy(logger, target, postClient))
 	}
 
 	logger.Info("starting server", slog.String("address", config.HTTPServer.Address))
